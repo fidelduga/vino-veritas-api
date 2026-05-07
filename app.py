@@ -1,9 +1,11 @@
 # ============================================================
 # VinoVeritas 🍷
 # Part 2: Flask REST API for Wine Quality Prediction
+# Fixed version with CORS for Lovable.ai
 # ============================================================
 
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import joblib
 import pandas as pd
 
@@ -12,6 +14,9 @@ import pandas as pd
 # ------------------------------------------------------------
 
 app = Flask(__name__)
+
+# Allow frontend apps such as Lovable.ai to call this API
+CORS(app)
 
 # ------------------------------------------------------------
 # 2. LOAD THE SAVED MODEL AND SCALER
@@ -75,9 +80,20 @@ def predict():
                 "missing_features": missing_features
             }), 400
 
+        # Convert all input values to float
+        input_values = []
+
+        for feature in feature_columns:
+            try:
+                input_values.append(float(data[feature]))
+            except ValueError:
+                return jsonify({
+                    "error": f"Invalid value for {feature}. Please enter a numeric value."
+                }), 400
+
         # Arrange input data in the same order used during training
         input_data = pd.DataFrame(
-            [[data[feature] for feature in feature_columns]],
+            [input_values],
             columns=feature_columns
         )
 
